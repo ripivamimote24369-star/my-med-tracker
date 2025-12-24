@@ -1,5 +1,5 @@
 // 修改 sw.js 的第一行
-const CACHE_NAME = 'med-tracker-v4'; // 只要改变这个字符串，手机就会识别到新版本
+const CACHE_NAME = 'med-tracker-v5'; // 只要改变这个字符串，手机就会识别到新版本
 const ASSETS = [
   'index.html',
   'manifest.json'
@@ -14,5 +14,6 @@ self.addEventListener('install', (e) => {
 self.addEventListener('fetch', (e) => {
   e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
 });
+
 
 
