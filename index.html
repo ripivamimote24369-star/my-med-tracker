@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>精密服药记录系统 V8.0</title>
+    <title>精密服药记录系统 V9.0</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2c3e50">
@@ -28,7 +28,6 @@
 
         .container { max-width: 550px; width: 100%; }
 
-        /* 顶部状态栏 - 包含实时进度 */
         .header {
             background: var(--card); padding: 15px; border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px;
@@ -39,9 +38,8 @@
         #progress-stats { color: var(--accent); font-weight: bold; font-size: 0.95em; }
         
         .date-row { display: flex; align-items: center; gap: 10px; font-size: 0.95em; }
-        input[type="date"] { font-family: var(--font-main); border: 1px solid var(--border); padding: 5px; border-radius: 4px; background: #fff; }
+        input[type="date"] { font-family: var(--font-main); border: 1px solid var(--border); padding: 5px; border-radius: 4px; background: #fff; font-size: 1em; }
 
-        /* 状态高亮卡片 */
         .task-card {
             background: var(--card); border-radius: 10px; padding: 15px; margin-bottom: 12px;
             border: 1px solid var(--border); position: relative; transition: all 0.3s;
@@ -82,23 +80,23 @@
             <div id="progress-stats">0 / 13</div>
         </div>
         <div class="date-row">
-            <label>当前日期:</label>
+            <label>日期选择:</label>
             <input type="date" id="date-picker" onchange="loadDay()">
         </div>
     </div>
     <div id="task-list"></div>
     <div class="notes-section">
         <h3>当日体感笔记</h3>
-        <textarea id="note-input" placeholder="点击此处记录今日观察..." oninput="saveNote()"></textarea>
+        <textarea id="note-input" placeholder="此处记录过往或今日的观察记录..." oninput="saveNote()"></textarea>
     </div>
     <div class="actions">
-        <button onclick="exportJSON()">备份全数据</button>
-        <button class="btn-reset" onclick="resetToday()">重置今日</button>
+        <button onclick="exportJSON()">导出备份</button>
+        <button class="btn-reset" onclick="resetSelectedDay()">重置当前日期</button>
     </div>
 </div>
 
 <script>
-// 逐字复述原始方案数据 (Verbatim Transcription)
+// 逐字复核方案数据 (Verbatim Transcription)
 const schedule = [
     { t: "07:00", label: "晨起", items: [{ n: "自制生姜水", d: "2-3片老生姜泡水", l: "暖脾胃，为止泻打底" }] },
     { t: "07:30", label: "早餐前", items: [{ n: "参苓白术散", d: "1/2袋 (6g)", l: "饭前30min，封堵肠道漏洞" }] },
@@ -120,24 +118,27 @@ const schedule = [
 ];
 
 const picker = document.getElementById('date-picker');
-// 初始化日期
-const getTodayStr = () => new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD 格式
-picker.value = getTodayStr();
+const getTodayStr = () => new Date().toLocaleDateString('en-CA'); 
 
-// 核心实时引擎
+// 记录系统当前的物理日期，用于监听跨零点瞬间
+let lastSystemDate = getTodayStr();
+picker.value = lastSystemDate;
+
 function tick() {
     const now = new Date();
     document.getElementById('clock').innerText = now.toTimeString().split(' ')[0];
     
-    // 【新增核心功能】：检查是否过零点并自动跳转
-    const todayStr = getTodayStr();
-    if (picker.value !== todayStr) {
-        console.log("检测到日期变更，自动跳转至: " + todayStr);
-        picker.value = todayStr;
+    const currentSystemDate = getTodayStr();
+    
+    // 【逻辑修正】：只有当物理系统日期真正变化时（跨过零点），才强制跳转
+    if (lastSystemDate !== currentSystemDate) {
+        console.log("系统检测到零点跨越，自动同步日期至: " + currentSystemDate);
+        lastSystemDate = currentSystemDate;
+        picker.value = currentSystemDate; // 只有这时才强制改动 picker
         renderList();
     }
 
-    // 分钟重绘逻辑
+    // 分钟变化重绘状态
     const currentMin = now.getMinutes();
     if (window.lastMin !== currentMin) {
         renderList();
@@ -159,6 +160,8 @@ function renderList() {
         const [sh, sm] = slot.t.split(':').map(Number);
         const slotMin = sh * 60 + sm;
         let status = '';
+        
+        // 只有在查看“今天”时，才显示“进行中/错过”的高亮逻辑
         if (isToday) {
             if (curTime >= slotMin && curTime < slotMin + 60) status = 'active';
             else if (curTime >= slotMin + 60 && !isSlotDone(dayData.checks, sIdx)) status = 'missed';
@@ -183,7 +186,7 @@ function renderList() {
         html += `</div>`;
     });
     document.getElementById('task-list').innerHTML = html;
-    document.getElementById('progress-stats').innerText = `今日进度: ${checkedCount} / ${totalCount}`;
+    document.getElementById('progress-stats').innerText = `${selectedDate} 进度: ${checkedCount} / ${totalCount}`;
     document.getElementById('note-input').value = dayData.note || "";
 }
 
@@ -208,13 +211,21 @@ function saveNote() {
 }
 
 function loadDay() { renderList(); }
-function resetToday() { if(confirm("重置选中日期的数据？")){ let db=JSON.parse(localStorage.getItem('med_v8_data')||'{}'); delete db[picker.value]; localStorage.setItem('med_v8_data',JSON.stringify(db)); location.reload(); }}
-function exportJSON() {
-    const blob = new Blob([localStorage.getItem('med_v8_data')], {type: 'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `med_history.json`; a.click();
+
+function resetSelectedDay() { 
+    if(confirm(`确定重置 ${picker.value} 的记录吗？`)){ 
+        let db=JSON.parse(localStorage.getItem('med_v8_data')||'{}'); 
+        delete db[picker.value]; 
+        localStorage.setItem('med_v8_data',JSON.stringify(db)); 
+        renderList(); 
+    }
 }
 
-// 唤醒自动校准
+function exportJSON() {
+    const blob = new Blob([localStorage.getItem('med_v8_data')], {type: 'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `med_records.json`; a.click();
+}
+
 document.addEventListener("visibilitychange", () => {
     if (!document.hidden) { window.lastMin = -1; tick(); }
 });
