@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>精密服药记录系统 V12</title>
+    <title>精密服药记录系统</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,27 +21,26 @@
             font-family: var(--font-main); background-color: var(--bg); color: var(--text-main);
             margin: 0; padding: env(safe-area-inset-top) 15px 30px 15px;
             display: flex; flex-direction: column; align-items: center;
-            overflow-x: hidden; touch-action: pan-y; /* 锁定垂直滚动，允许脚本拦截水平手势 */
+            overflow-x: hidden; touch-action: pan-y;
             -webkit-tap-highlight-color: transparent;
         }
 
         .container { max-width: 550px; width: 100%; }
 
         .header {
-            background: var(--card); padding: 15px; border-radius: 12px;
+            background: var(--card); padding: 18px; border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px;
             position: sticky; top: env(safe-area-inset-top); z-index: 100; border: 1px solid var(--border);
         }
-        .v-tag { font-size: 10px; color: #ccc; float: right; border: 1px solid #eee; padding: 1px 4px; border-radius: 3px; }
-        .clock-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 8px; }
+        .clock-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 12px; }
         #clock { font-size: 1.8em; font-weight: bold; font-family: "Times New Roman", serif; }
         #progress-stats { color: var(--accent); font-weight: bold; font-size: 0.9em; }
         
-        .date-row { display: flex; align-items: center; justify-content: space-between; gap: 5px; font-size: 0.9em; }
-        input[type="date"] { font-family: var(--font-main); border: 1px solid var(--border); padding: 6px; border-radius: 4px; font-size: 1em; background: #fff; }
-        .btn-today { background: var(--accent); color: white; border: none; padding: 7px 12px; border-radius: 4px; font-size: 0.8em; }
+        .date-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        input[type="date"] { font-family: var(--font-main); border: 1px solid var(--border); padding: 8px; border-radius: 6px; font-size: 1em; background: #fff; outline: none; flex: 1; }
+        .btn-today { background: var(--accent); color: white; border: none; padding: 10px 15px; border-radius: 6px; font-size: 0.85em; font-weight: bold; }
 
-        .task-card { background: var(--card); border-radius: 10px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); }
+        .task-card { background: var(--card); border-radius: 10px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); transition: all 0.3s; }
         .task-card.active { border: 2px solid var(--accent); box-shadow: 0 0 12px rgba(39, 174, 96, 0.1); }
         .task-card.missed { border-left: 6px solid var(--warning); }
         .task-card.future { opacity: 0.6; }
@@ -55,27 +54,26 @@
         .med-info { flex: 1; }
         .med-title { font-weight: bold; font-size: 1.1em; }
         .med-dose { color: #d35400; font-family: "Times New Roman", serif; font-size: 1.1em; font-weight: bold; }
-        .med-logic { font-size: 0.85em; color: #7f8c8d; margin-top: 4px; border-top: 1px dashed #eee; padding-top: 4px; }
+        .med-logic { font-size: 0.85em; color: #7f8c8d; margin-top: 4px; border-top: 1px dashed #eee; padding-top: 4px; line-height: 1.4; }
 
         .notes-section { background: #fffdf0; border: 1px solid #ffe58f; padding: 15px; border-radius: 10px; margin-top: 20px; }
         textarea { width: 100%; height: 100px; border: none; background: transparent; font-family: var(--font-main); font-size: 1.1em; outline: none; }
 
         .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        button.primary { padding: 12px; border: none; border-radius: 8px; font-family: var(--font-main); font-weight: bold; background: var(--text-main); color: white; }
-        button.reset { padding: 12px; border: 1px solid #fcc; border-radius: 8px; background: #fee; color: var(--warning); font-family: var(--font-main); font-weight: bold; }
+        button.primary { padding: 14px; border: none; border-radius: 8px; font-family: var(--font-main); font-weight: bold; background: var(--text-main); color: white; }
+        button.reset { padding: 14px; border: 1px solid #fcc; border-radius: 8px; background: #fee; color: var(--warning); font-family: var(--font-main); font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <span class="v-tag">CODE V12.0</span>
         <div class="clock-row">
             <div id="clock">00:00:00</div>
             <div id="progress-stats">0 / 13</div>
         </div>
         <div class="date-row">
-            <input type="date" id="date-picker" onchange="renderList()">
+            <input type="date" id="date-picker" onchange="validateAndRender()">
             <button class="btn-today" onclick="goToday()">回到今天</button>
         </div>
     </div>
@@ -130,6 +128,15 @@ function tick() {
         renderList();
         window.lastMin = now.getMinutes();
     }
+}
+
+function validateAndRender() {
+    const today = getTodayStr();
+    if (picker.value > today) {
+        alert("禁止查看未来日期");
+        picker.value = today;
+    }
+    renderList();
 }
 
 function renderList() {
@@ -197,7 +204,7 @@ function exportJSON() {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `med_records.json`; a.click();
 }
 
-// 【V12 强化手势引擎】
+// 强化手势引擎：包含边界保护
 let tStartX = 0, tStartY = 0;
 document.addEventListener('touchstart', e => {
     if (e.target.tagName.toLowerCase() === 'textarea' || e.target.tagName.toLowerCase() === 'input') return;
@@ -209,12 +216,14 @@ document.addEventListener('touchend', e => {
     if (e.target.tagName.toLowerCase() === 'textarea' || e.target.tagName.toLowerCase() === 'input') return;
     const tEndX = e.changedTouches[0].clientX;
     const tEndY = e.changedTouches[0].clientY;
+    const dx = tEndX - tStartX, dy = tEndY - tStartY;
     
-    const dx = tEndX - tStartX;
-    const dy = tEndY - tStartY;
-    
-    // 只有当水平位移大于 80px 且明显超过垂直位移时才触发
     if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy)) {
+        const today = getTodayStr();
+        if (dx < 0 && picker.value >= today) {
+            // 向左划意图进入明天，拦截
+            return;
+        }
         let curDate = new Date(picker.value);
         curDate.setDate(curDate.getDate() + (dx > 0 ? -1 : 1));
         picker.value = curDate.toLocaleDateString('en-CA');
@@ -225,20 +234,6 @@ document.addEventListener('touchend', e => {
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { window.lastMin = -1; tick(); } });
 setInterval(tick, 1000);
 tick();
-
-// PWA 更新通知
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').then(reg => {
-        reg.addEventListener('updatefound', () => {
-            const nw = reg.installing;
-            nw.addEventListener('statechange', () => {
-                if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                    if(confirm("检测到新版本 V12，是否刷新启用滑动功能？")) location.reload();
-                }
-            });
-        });
-    });
-}
 </script>
 </body>
 </html>
