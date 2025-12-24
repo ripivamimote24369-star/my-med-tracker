@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>精密服药记录系统 V9.0</title>
+    <title>精密服药记录系统 V11</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2c3e50">
@@ -12,7 +12,6 @@
     <meta name="apple-mobile-web-app-title" content="精密服药">
 
     <style>
-        /* 字体规范：英文 Times New Roman, 中文宋体 */
         :root {
             --font-main: "Times New Roman", "SimSun", "BaseSimSun", "宋体", serif;
             --bg: #f4f6f8; --card: #ffffff; --accent: #27ae60; 
@@ -23,37 +22,38 @@
             font-family: var(--font-main); background-color: var(--bg); color: var(--text-main);
             margin: 0; padding: env(safe-area-inset-top) 15px 30px 15px;
             display: flex; flex-direction: column; align-items: center;
+            overflow-x: hidden; /* 防止滑动时出现横向滚动条 */
             -webkit-tap-highlight-color: transparent;
         }
 
-        .container { max-width: 550px; width: 100%; }
+        .container { max-width: 550px; width: 100%; touch-action: pan-y; } /* 允许上下滚动，拦截左右滑动 */
 
         .header {
             background: var(--card); padding: 15px; border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px;
             position: sticky; top: env(safe-area-inset-top); z-index: 100; border: 1px solid var(--border);
         }
-        .clock-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px; }
+        .version-tag { font-size: 0.6em; color: #ccc; float: right; }
+        .clock-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 8px; }
         #clock { font-size: 1.8em; font-weight: bold; font-family: "Times New Roman", serif; }
-        #progress-stats { color: var(--accent); font-weight: bold; font-size: 0.95em; }
+        #progress-stats { color: var(--accent); font-weight: bold; font-size: 0.9em; }
         
-        .date-row { display: flex; align-items: center; gap: 10px; font-size: 0.95em; }
-        input[type="date"] { font-family: var(--font-main); border: 1px solid var(--border); padding: 5px; border-radius: 4px; background: #fff; font-size: 1em; }
+        .date-row { display: flex; align-items: center; justify-content: space-between; gap: 5px; font-size: 0.9em; }
+        input[type="date"] { font-family: var(--font-main); border: 1px solid var(--border); padding: 5px; border-radius: 4px; font-size: 1em; }
+        .btn-today { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.8em; cursor: pointer; }
+
+        .hint-text { text-align: center; font-size: 0.7em; color: #bbb; margin-top: 5px; }
 
         .task-card {
             background: var(--card); border-radius: 10px; padding: 15px; margin-bottom: 12px;
-            border: 1px solid var(--border); position: relative; transition: all 0.3s;
+            border: 1px solid var(--border); position: relative;
         }
-        .task-card.active { border: 2px solid var(--accent); box-shadow: 0 0 12px rgba(39, 174, 96, 0.2); }
+        .task-card.active { border: 2px solid var(--accent); box-shadow: 0 0 12px rgba(39, 174, 96, 0.1); }
         .task-card.missed { border-left: 6px solid var(--warning); }
         .task-card.future { opacity: 0.6; }
 
-        .badge {
-            display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em;
-            font-weight: bold; margin-bottom: 8px; background: #eee; color: #666;
-        }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; margin-bottom: 8px; background: #eee; color: #666; }
         .fixed-badge { background: var(--anchor); color: white; }
-        .active .badge { background: var(--accent); color: white; }
 
         .item-row { display: flex; align-items: flex-start; gap: 12px; margin-top: 8px; }
         input[type="checkbox"] { width: 26px; height: 26px; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
@@ -61,42 +61,44 @@
         .med-info { flex: 1; }
         .med-title { font-weight: bold; font-size: 1.1em; }
         .med-dose { color: #d35400; font-family: "Times New Roman", serif; font-size: 1.05em; font-weight: bold; }
-        .med-logic { font-size: 0.85em; color: #7f8c8d; margin-top: 4px; border-top: 1px dashed #eee; padding-top: 4px; font-style: italic; }
+        .med-logic { font-size: 0.85em; color: #7f8c8d; margin-top: 4px; border-top: 1px dashed #eee; padding-top: 4px; }
 
         .notes-section { background: #fffdf0; border: 1px solid #ffe58f; padding: 15px; border-radius: 10px; margin-top: 20px; }
         textarea { width: 100%; height: 100px; border: none; background: transparent; font-family: var(--font-main); font-size: 1.1em; outline: none; }
 
         .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        button { padding: 12px; border: none; border-radius: 8px; font-family: var(--font-main); font-weight: bold; cursor: pointer; background: var(--text-main); color: white; }
-        .btn-reset { background: #fee; color: var(--warning); border: 1px solid #fcc; }
+        button.primary { padding: 12px; border: none; border-radius: 8px; font-family: var(--font-main); font-weight: bold; cursor: pointer; background: var(--text-main); color: white; }
+        button.reset { padding: 12px; border: 1px solid #fcc; border-radius: 8px; background: #fee; color: var(--warning); font-family: var(--font-main); font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="container" id="swipe-zone">
     <div class="header">
+        <span class="version-tag">SYSTEM V11.0</span>
         <div class="clock-row">
             <div id="clock">00:00:00</div>
             <div id="progress-stats">0 / 13</div>
         </div>
         <div class="date-row">
-            <label>日期选择:</label>
-            <input type="date" id="date-picker" onchange="loadDay()">
+            <input type="date" id="date-picker" onchange="manualDateChange()">
+            <button class="btn-today" onclick="goToday()">回到今天</button>
         </div>
+        <div class="hint-text">向右滑动查看上一天 | 向左滑动查看下一天</div>
     </div>
     <div id="task-list"></div>
     <div class="notes-section">
-        <h3>当日体感笔记</h3>
-        <textarea id="note-input" placeholder="此处记录过往或今日的观察记录..." oninput="saveNote()"></textarea>
+        <h3>当日体感观察笔记</h3>
+        <textarea id="note-input" placeholder="输入记录..." oninput="saveNote()"></textarea>
     </div>
     <div class="actions">
-        <button onclick="exportJSON()">导出备份</button>
-        <button class="btn-reset" onclick="resetSelectedDay()">重置当前日期</button>
+        <button class="primary" onclick="exportJSON()">备份全数据</button>
+        <button class="reset" onclick="resetDay()">重置记录</button>
     </div>
 </div>
 
 <script>
-// 逐字复核方案数据 (Verbatim Transcription)
+// 逐字核校原始数据
 const schedule = [
     { t: "07:00", label: "晨起", items: [{ n: "自制生姜水", d: "2-3片老生姜泡水", l: "暖脾胃，为止泻打底" }] },
     { t: "07:30", label: "早餐前", items: [{ n: "参苓白术散", d: "1/2袋 (6g)", l: "饭前30min，封堵肠道漏洞" }] },
@@ -114,35 +116,27 @@ const schedule = [
         { n: "知柏地黄丸", d: "4丸", l: "压制夜间虚火" }
     ]},
     { t: "22:00", label: "睡前", items: [{ n: "甘氨酸镁 + 生脉饮", d: "1粒 + 1支", l: "神经放松，辅助深睡眠" }] },
-    { t: "23:00", label: "临界点", fixed: true, items: [{ n: "强制入睡", d: "唯一真理", l: "错过此点，全盘方案失效" }] }
+    { t: "23:00", label: "临界点", fixed: true, items: [{ n: "强制入睡", d: "唯一真理" }] }
 ];
 
 const picker = document.getElementById('date-picker');
 const getTodayStr = () => new Date().toLocaleDateString('en-CA'); 
 
-// 记录系统当前的物理日期，用于监听跨零点瞬间
-let lastSystemDate = getTodayStr();
-picker.value = lastSystemDate;
+let physicalDay = getTodayStr(); 
+picker.value = physicalDay;
 
 function tick() {
     const now = new Date();
     document.getElementById('clock').innerText = now.toTimeString().split(' ')[0];
-    
-    const currentSystemDate = getTodayStr();
-    
-    // 【逻辑修正】：只有当物理系统日期真正变化时（跨过零点），才强制跳转
-    if (lastSystemDate !== currentSystemDate) {
-        console.log("系统检测到零点跨越，自动同步日期至: " + currentSystemDate);
-        lastSystemDate = currentSystemDate;
-        picker.value = currentSystemDate; // 只有这时才强制改动 picker
+    const currentRealDay = getTodayStr();
+    if (physicalDay !== currentRealDay) {
+        physicalDay = currentRealDay;
+        picker.value = currentRealDay;
         renderList();
     }
-
-    // 分钟变化重绘状态
-    const currentMin = now.getMinutes();
-    if (window.lastMin !== currentMin) {
+    if (window.lastMin !== now.getMinutes()) {
         renderList();
-        window.lastMin = currentMin;
+        window.lastMin = now.getMinutes();
     }
 }
 
@@ -150,19 +144,16 @@ function renderList() {
     const now = new Date();
     const curTime = now.getHours() * 60 + now.getMinutes();
     const selectedDate = picker.value;
-    const isToday = selectedDate === getTodayStr();
-    const db = JSON.parse(localStorage.getItem('med_v8_data') || '{}');
+    const isViewingToday = selectedDate === getTodayStr();
+    const db = JSON.parse(localStorage.getItem('med_v10_db') || '{}');
     const dayData = db[selectedDate] || { checks: {}, note: "" };
 
     let html = '', checkedCount = 0, totalCount = 0;
-
     schedule.forEach((slot, sIdx) => {
         const [sh, sm] = slot.t.split(':').map(Number);
         const slotMin = sh * 60 + sm;
         let status = '';
-        
-        // 只有在查看“今天”时，才显示“进行中/错过”的高亮逻辑
-        if (isToday) {
+        if (isViewingToday) {
             if (curTime >= slotMin && curTime < slotMin + 60) status = 'active';
             else if (curTime >= slotMin + 60 && !isSlotDone(dayData.checks, sIdx)) status = 'missed';
             else if (curTime < slotMin) status = 'future';
@@ -179,7 +170,7 @@ function renderList() {
                 <input type="checkbox" ${checked} onchange="toggle('${selectedDate}','${key}',this.checked)">
                 <div class="med-info">
                     <div class="med-title">${item.n} <span class="med-dose">${item.d}</span></div>
-                    <div class="med-logic">${item.l}</div>
+                    <div class="med-logic">${item.l || ''}</div>
                 </div>
             </div>`;
         });
@@ -190,45 +181,67 @@ function renderList() {
     document.getElementById('note-input').value = dayData.note || "";
 }
 
-function isSlotDone(checks, sIdx) {
-    return schedule[sIdx].items.every((_, iIdx) => checks[`${sIdx}-${iIdx}`]);
-}
+function isSlotDone(checks, sIdx) { return schedule[sIdx].items.every((_, iIdx) => checks[`${sIdx}-${iIdx}`]); }
 
 function toggle(date, key, val) {
-    let db = JSON.parse(localStorage.getItem('med_v8_data') || '{}');
+    let db = JSON.parse(localStorage.getItem('med_v10_db') || '{}');
     if (!db[date]) db[date] = { checks: {}, note: "" };
     db[date].checks[key] = val;
-    localStorage.setItem('med_v8_data', JSON.stringify(db));
+    localStorage.setItem('med_v10_db', JSON.stringify(db));
     renderList();
 }
 
 function saveNote() {
     const date = picker.value, text = document.getElementById('note-input').value;
-    let db = JSON.parse(localStorage.getItem('med_v8_data') || '{}');
+    let db = JSON.parse(localStorage.getItem('med_v10_db') || '{}');
     if (!db[date]) db[date] = { checks: {}, note: "" };
     db[date].note = text;
-    localStorage.setItem('med_v8_data', JSON.stringify(db));
+    localStorage.setItem('med_v10_db', JSON.stringify(db));
 }
 
-function loadDay() { renderList(); }
+function manualDateChange() { renderList(); }
+function goToday() { picker.value = getTodayStr(); renderList(); }
+function resetDay() { if(confirm(`重置 ${picker.value} 的记录？`)){ let db=JSON.parse(localStorage.getItem('med_v10_db')||'{}'); delete db[picker.value]; localStorage.setItem('med_v10_db',JSON.stringify(db)); renderList(); }}
+function exportJSON() {
+    const blob = new Blob([localStorage.getItem('med_v10_db')], {type: 'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `med_data.json`; a.click();
+}
 
-function resetSelectedDay() { 
-    if(confirm(`确定重置 ${picker.value} 的记录吗？`)){ 
-        let db=JSON.parse(localStorage.getItem('med_v8_data')||'{}'); 
-        delete db[picker.value]; 
-        localStorage.setItem('med_v8_data',JSON.stringify(db)); 
-        renderList(); 
+// 【新增手势逻辑】：滑动切换日期
+let touchStartX = 0;
+let touchEndX = 0;
+
+function changeDay(delta) {
+    let current = new Date(picker.value);
+    current.setDate(current.getDate() + delta);
+    picker.value = current.toLocaleDateString('en-CA');
+    renderList();
+}
+
+document.addEventListener('touchstart', e => {
+    // 如果手指落在 textarea 上，则不触发翻页
+    if (e.target.tagName.toLowerCase() === 'textarea') return;
+    touchStartX = e.changedTouches[0].screenX;
+}, false);
+
+document.addEventListener('touchend', e => {
+    if (e.target.tagName.toLowerCase() === 'textarea') return;
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+}, false);
+
+function handleSwipe() {
+    const swipeDistance = touchEndX - touchStartX;
+    if (Math.abs(swipeDistance) > 100) { // 设定 100 像素为阈值
+        if (swipeDistance > 0) {
+            changeDay(-1); // 向右滑：前一天
+        } else {
+            changeDay(1);  // 向左滑：后一天
+        }
     }
 }
 
-function exportJSON() {
-    const blob = new Blob([localStorage.getItem('med_v8_data')], {type: 'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `med_records.json`; a.click();
-}
-
-document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) { window.lastMin = -1; tick(); }
-});
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { window.lastMin = -1; tick(); } });
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
