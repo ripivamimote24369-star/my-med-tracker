@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>精密服药记录系统</title>
+    <title>精密服药记录系统 V7.0</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2c3e50">
@@ -12,6 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="精密服药">
 
     <style>
+        /* 严格执行：英文字体新罗马，中文字体宋体 */
         :root {
             --font-main: "Times New Roman", "SimSun", "BaseSimSun", "宋体", serif;
             --bg: #f4f6f8; --card: #ffffff; --accent: #27ae60; 
@@ -22,24 +23,25 @@
             font-family: var(--font-main); background-color: var(--bg); color: var(--text-main);
             margin: 0; padding: env(safe-area-inset-top) 15px 30px 15px;
             display: flex; flex-direction: column; align-items: center;
-            -webkit-tap-highlight-color: transparent; user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .container { max-width: 550px; width: 100%; }
 
-        /* 顶部状态栏 */
+        /* 顶部状态栏 - 实时引擎优化 */
         .header {
             background: var(--card); padding: 15px; border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px;
             position: sticky; top: env(safe-area-inset-top); z-index: 100; border: 1px solid var(--border);
         }
         .clock-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px; }
-        #clock { font-size: 1.8em; font-weight: bold; }
+        #clock { font-size: 1.8em; font-weight: bold; color: var(--text-main); font-family: "Times New Roman", serif; }
         #progress-stats { color: var(--accent); font-weight: bold; font-size: 0.9em; }
+        
         .date-row { display: flex; align-items: center; gap: 10px; font-size: 0.95em; }
-        input[type="date"] { font-family: var(--font-main); border: 1px solid var(--border); padding: 5px; border-radius: 4px; background: #fff; }
+        input[type="date"] { font-family: var(--font-main); border: 1px solid var(--border); padding: 5px; border-radius: 4px; }
 
-        /* 任务卡片 */
+        /* 任务卡片状态高亮 */
         .task-card {
             background: var(--card); border-radius: 10px; padding: 15px; margin-bottom: 12px;
             border: 1px solid var(--border); position: relative; transition: all 0.3s;
@@ -56,16 +58,15 @@
         .active .badge { background: var(--accent); color: white; }
 
         .item-row { display: flex; align-items: flex-start; gap: 12px; margin-top: 8px; }
-        input[type="checkbox"] { width: 24px; height: 24px; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
+        input[type="checkbox"] { width: 26px; height: 26px; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
         
         .med-info { flex: 1; }
         .med-title { font-weight: bold; font-size: 1.1em; }
         .med-dose { color: #d35400; font-family: "Times New Roman", serif; font-size: 1em; font-weight: bold; }
         .med-logic { font-size: 0.85em; color: #7f8c8d; margin-top: 4px; border-top: 1px dashed #eee; padding-top: 4px; font-style: italic; }
 
-        /* 笔记区 */
         .notes-section { background: #fffdf0; border: 1px solid #ffe58f; padding: 15px; border-radius: 10px; margin-top: 20px; }
-        textarea { width: 100%; height: 100px; border: none; background: transparent; font-family: var(--font-main); font-size: 1.1em; resize: none; outline: none; }
+        textarea { width: 100%; height: 100px; border: none; background: transparent; font-family: var(--font-main); font-size: 1.1em; outline: none; }
 
         .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         button { padding: 12px; border: none; border-radius: 8px; font-family: var(--font-main); font-weight: bold; cursor: pointer; background: var(--text-main); color: white; }
@@ -76,22 +77,28 @@
 
 <div class="container">
     <div class="header">
-        <div class="clock-row"><div id="clock">00:00:00</div><div id="progress-stats">0 / 13</div></div>
-        <div class="date-row"><label>记录日期:</label><input type="date" id="date-picker" onchange="loadDay()"></div>
+        <div class="clock-row">
+            <div id="clock">00:00:00</div>
+            <div id="progress-stats">加载中...</div>
+        </div>
+        <div class="date-row">
+            <label>记录日期:</label>
+            <input type="date" id="date-picker" onchange="loadDay()">
+        </div>
     </div>
     <div id="task-list"></div>
     <div class="notes-section">
-        <h3>当日体感笔记</h3>
-        <textarea id="note-input" placeholder="记录排便、睡眠、身体反应..." oninput="saveNote()"></textarea>
+        <h3>当日体感笔记 (每日观察记录)</h3>
+        <textarea id="note-input" placeholder="输入记录..." oninput="saveNote()"></textarea>
     </div>
     <div class="actions">
-        <button onclick="exportJSON()">备份数据</button>
+        <button onclick="exportJSON()">备份全数据</button>
         <button class="btn-reset" onclick="resetToday()">重置今日</button>
     </div>
 </div>
 
 <script>
-// 核心方案数据核校
+// 逐字核校服药方案 (Verbatim Transcription)
 const schedule = [
     { t: "07:00", label: "晨起", items: [{ n: "自制生姜水", d: "2-3片老生姜泡水", l: "暖脾胃，为止泻打底" }] },
     { t: "07:30", label: "早餐前", items: [{ n: "参苓白术散", d: "1/2袋 (6g)", l: "饭前30min，封堵肠道漏洞" }] },
@@ -109,15 +116,23 @@ const schedule = [
         { n: "知柏地黄丸", d: "4丸", l: "压制夜间虚火" }
     ]},
     { t: "22:00", label: "睡前", items: [{ n: "甘氨酸镁 + 生脉饮", d: "1粒 + 1支", l: "神经放松，辅助深睡眠" }] },
-    { t: "23:00", label: "入睡临界点", fixed: true, items: [{ n: "强制入睡", d: "唯一真理", l: "错过此点，全盘方案失效" }] }
+    { t: "23:00", label: "临界点", fixed: true, items: [{ n: "强制入睡", d: "唯一真理", l: "错过此点，全盘方案失效" }] }
 ];
 
 const picker = document.getElementById('date-picker');
 picker.value = new Date().toISOString().split('T')[0];
 
+// 核心时钟与状态引擎
 function tick() {
-    document.getElementById('clock').innerText = new Date().toTimeString().split(' ')[0];
-    renderList();
+    const now = new Date();
+    document.getElementById('clock').innerText = now.toTimeString().split(' ')[0];
+    
+    // 仅在分钟变化时或初次加载时重绘列表以节省电量
+    const currentMin = now.getMinutes();
+    if (window.lastMin !== currentMin) {
+        renderList();
+        window.lastMin = currentMin;
+    }
 }
 
 function renderList() {
@@ -125,7 +140,7 @@ function renderList() {
     const curTime = now.getHours() * 60 + now.getMinutes();
     const selectedDate = picker.value;
     const isToday = selectedDate === now.toISOString().split('T')[0];
-    const db = JSON.parse(localStorage.getItem('med_v6_pwa') || '{}');
+    const db = JSON.parse(localStorage.getItem('med_v7_data') || '{}');
     const dayData = db[selectedDate] || { checks: {}, note: "" };
 
     let html = '', checkedCount = 0, totalCount = 0;
@@ -145,9 +160,10 @@ function renderList() {
         slot.items.forEach((item, iIdx) => {
             totalCount++;
             const key = `${sIdx}-${iIdx}`;
-            if (dayData.checks[key]) { checkedCount++; }
+            const checked = dayData.checks[key] ? 'checked' : '';
+            if (checked) checkedCount++;
             html += `<div class="item-row">
-                <input type="checkbox" ${dayData.checks[key]?'checked':''} onchange="toggle('${selectedDate}','${key}',this.checked)">
+                <input type="checkbox" ${checked} onchange="toggle('${selectedDate}','${key}',this.checked)">
                 <div class="med-info">
                     <div class="med-title">${item.n} <span class="med-dose">${item.d}</span></div>
                     <div class="med-logic">${item.l}</div>
@@ -157,43 +173,54 @@ function renderList() {
         html += `</div>`;
     });
     document.getElementById('task-list').innerHTML = html;
-    document.getElementById('progress-stats').innerText = `${checkedCount} / ${totalCount}`;
+    document.getElementById('progress-stats').innerText = `完成度: ${checkedCount} / ${totalCount}`;
     document.getElementById('note-input').value = dayData.note || "";
 }
 
-function isSlotDone(checks, sIdx) { return schedule[sIdx].items.every((_, iIdx) => checks[`${sIdx}-${iIdx}`]); }
+function isSlotDone(checks, sIdx) {
+    return schedule[sIdx].items.every((_, iIdx) => checks[`${sIdx}-${iIdx}`]);
+}
 
 function toggle(date, key, val) {
-    let db = JSON.parse(localStorage.getItem('med_v6_pwa') || '{}');
+    let db = JSON.parse(localStorage.getItem('med_v7_data') || '{}');
     if (!db[date]) db[date] = { checks: {}, note: "" };
     db[date].checks[key] = val;
-    localStorage.setItem('med_v6_pwa', JSON.stringify(db));
+    localStorage.setItem('med_v7_data', JSON.stringify(db));
     renderList();
 }
 
 function saveNote() {
     const date = picker.value, text = document.getElementById('note-input').value;
-    let db = JSON.parse(localStorage.getItem('med_v6_pwa') || '{}');
+    let db = JSON.parse(localStorage.getItem('med_v7_data') || '{}');
     if (!db[date]) db[date] = { checks: {}, note: "" };
     db[date].note = text;
-    localStorage.setItem('med_v6_pwa', JSON.stringify(db));
+    localStorage.setItem('med_v7_data', JSON.stringify(db));
 }
 
 function loadDay() { renderList(); }
-function resetToday() { if(confirm("重置今日数据？")){ localStorage.removeItem('med_v6_pwa'); location.reload(); }}
+function resetToday() { if(confirm("重置今日数据？")){ localStorage.removeItem('med_v7_data'); location.reload(); }}
 function exportJSON() {
-    const blob = new Blob([localStorage.getItem('med_v6_pwa')], {type: 'application/json'});
+    const blob = new Blob([localStorage.getItem('med_v7_data')], {type: 'application/json'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `med_backup.json`; a.click();
 }
 
-// 注册 Service Worker (PWA 核心)
+// 唤醒监听：解决手机 App 切回后台后冻结的问题
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+        window.lastMin = -1; // 强制触发重绘
+        tick();
+    }
+});
+
+// 注册 Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').then(reg => console.log('SW Registered')).catch(err => console.log('SW Failed', err));
+        navigator.serviceWorker.register('sw.js').then(() => console.log('SW Active'));
     });
 }
 
-setInterval(tick, 30000);
+// 每秒刷新时钟
+setInterval(tick, 1000);
 tick();
 </script>
 </body>
