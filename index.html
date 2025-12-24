@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>精密服药记录系统 V11</title>
+    <title>精密服药记录系统 V12</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2c3e50">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="精密服药">
@@ -22,32 +21,27 @@
             font-family: var(--font-main); background-color: var(--bg); color: var(--text-main);
             margin: 0; padding: env(safe-area-inset-top) 15px 30px 15px;
             display: flex; flex-direction: column; align-items: center;
-            overflow-x: hidden; /* 防止滑动时出现横向滚动条 */
+            overflow-x: hidden; touch-action: pan-y; /* 锁定垂直滚动，允许脚本拦截水平手势 */
             -webkit-tap-highlight-color: transparent;
         }
 
-        .container { max-width: 550px; width: 100%; touch-action: pan-y; } /* 允许上下滚动，拦截左右滑动 */
+        .container { max-width: 550px; width: 100%; }
 
         .header {
             background: var(--card); padding: 15px; border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px;
             position: sticky; top: env(safe-area-inset-top); z-index: 100; border: 1px solid var(--border);
         }
-        .version-tag { font-size: 0.6em; color: #ccc; float: right; }
+        .v-tag { font-size: 10px; color: #ccc; float: right; border: 1px solid #eee; padding: 1px 4px; border-radius: 3px; }
         .clock-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 8px; }
         #clock { font-size: 1.8em; font-weight: bold; font-family: "Times New Roman", serif; }
         #progress-stats { color: var(--accent); font-weight: bold; font-size: 0.9em; }
         
         .date-row { display: flex; align-items: center; justify-content: space-between; gap: 5px; font-size: 0.9em; }
-        input[type="date"] { font-family: var(--font-main); border: 1px solid var(--border); padding: 5px; border-radius: 4px; font-size: 1em; }
-        .btn-today { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.8em; cursor: pointer; }
+        input[type="date"] { font-family: var(--font-main); border: 1px solid var(--border); padding: 6px; border-radius: 4px; font-size: 1em; background: #fff; }
+        .btn-today { background: var(--accent); color: white; border: none; padding: 7px 12px; border-radius: 4px; font-size: 0.8em; }
 
-        .hint-text { text-align: center; font-size: 0.7em; color: #bbb; margin-top: 5px; }
-
-        .task-card {
-            background: var(--card); border-radius: 10px; padding: 15px; margin-bottom: 12px;
-            border: 1px solid var(--border); position: relative;
-        }
+        .task-card { background: var(--card); border-radius: 10px; padding: 15px; margin-bottom: 12px; border: 1px solid var(--border); }
         .task-card.active { border: 2px solid var(--accent); box-shadow: 0 0 12px rgba(39, 174, 96, 0.1); }
         .task-card.missed { border-left: 6px solid var(--warning); }
         .task-card.future { opacity: 0.6; }
@@ -56,35 +50,34 @@
         .fixed-badge { background: var(--anchor); color: white; }
 
         .item-row { display: flex; align-items: flex-start; gap: 12px; margin-top: 8px; }
-        input[type="checkbox"] { width: 26px; height: 26px; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
+        input[type="checkbox"] { width: 28px; height: 28px; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
         
         .med-info { flex: 1; }
         .med-title { font-weight: bold; font-size: 1.1em; }
-        .med-dose { color: #d35400; font-family: "Times New Roman", serif; font-size: 1.05em; font-weight: bold; }
+        .med-dose { color: #d35400; font-family: "Times New Roman", serif; font-size: 1.1em; font-weight: bold; }
         .med-logic { font-size: 0.85em; color: #7f8c8d; margin-top: 4px; border-top: 1px dashed #eee; padding-top: 4px; }
 
         .notes-section { background: #fffdf0; border: 1px solid #ffe58f; padding: 15px; border-radius: 10px; margin-top: 20px; }
         textarea { width: 100%; height: 100px; border: none; background: transparent; font-family: var(--font-main); font-size: 1.1em; outline: none; }
 
         .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        button.primary { padding: 12px; border: none; border-radius: 8px; font-family: var(--font-main); font-weight: bold; cursor: pointer; background: var(--text-main); color: white; }
-        button.reset { padding: 12px; border: 1px solid #fcc; border-radius: 8px; background: #fee; color: var(--warning); font-family: var(--font-main); font-weight: bold; cursor: pointer; }
+        button.primary { padding: 12px; border: none; border-radius: 8px; font-family: var(--font-main); font-weight: bold; background: var(--text-main); color: white; }
+        button.reset { padding: 12px; border: 1px solid #fcc; border-radius: 8px; background: #fee; color: var(--warning); font-family: var(--font-main); font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container" id="swipe-zone">
+<div class="container">
     <div class="header">
-        <span class="version-tag">SYSTEM V11.0</span>
+        <span class="v-tag">CODE V12.0</span>
         <div class="clock-row">
             <div id="clock">00:00:00</div>
             <div id="progress-stats">0 / 13</div>
         </div>
         <div class="date-row">
-            <input type="date" id="date-picker" onchange="manualDateChange()">
+            <input type="date" id="date-picker" onchange="renderList()">
             <button class="btn-today" onclick="goToday()">回到今天</button>
         </div>
-        <div class="hint-text">向右滑动查看上一天 | 向左滑动查看下一天</div>
     </div>
     <div id="task-list"></div>
     <div class="notes-section">
@@ -121,7 +114,6 @@ const schedule = [
 
 const picker = document.getElementById('date-picker');
 const getTodayStr = () => new Date().toLocaleDateString('en-CA'); 
-
 let physicalDay = getTodayStr(); 
 picker.value = physicalDay;
 
@@ -164,10 +156,9 @@ function renderList() {
         slot.items.forEach((item, iIdx) => {
             totalCount++;
             const key = `${sIdx}-${iIdx}`;
-            const checked = dayData.checks[key] ? 'checked' : '';
-            if (checked) checkedCount++;
+            if (dayData.checks[key]) checkedCount++;
             html += `<div class="item-row">
-                <input type="checkbox" ${checked} onchange="toggle('${selectedDate}','${key}',this.checked)">
+                <input type="checkbox" ${dayData.checks[key]?'checked':''} onchange="toggle('${selectedDate}','${key}',this.checked)">
                 <div class="med-info">
                     <div class="med-title">${item.n} <span class="med-dose">${item.d}</span></div>
                     <div class="med-logic">${item.l || ''}</div>
@@ -199,56 +190,55 @@ function saveNote() {
     localStorage.setItem('med_v10_db', JSON.stringify(db));
 }
 
-function manualDateChange() { renderList(); }
 function goToday() { picker.value = getTodayStr(); renderList(); }
-function resetDay() { if(confirm(`重置 ${picker.value} 的记录？`)){ let db=JSON.parse(localStorage.getItem('med_v10_db')||'{}'); delete db[picker.value]; localStorage.setItem('med_v10_db',JSON.stringify(db)); renderList(); }}
+function resetDay() { if(confirm("重置记录？")){ let db=JSON.parse(localStorage.getItem('med_v10_db')||'{}'); delete db[picker.value]; localStorage.setItem('med_v10_db',JSON.stringify(db)); renderList(); }}
 function exportJSON() {
     const blob = new Blob([localStorage.getItem('med_v10_db')], {type: 'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `med_data.json`; a.click();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `med_records.json`; a.click();
 }
 
-// 【新增手势逻辑】：滑动切换日期
-let touchStartX = 0;
-let touchEndX = 0;
-
-function changeDay(delta) {
-    let current = new Date(picker.value);
-    current.setDate(current.getDate() + delta);
-    picker.value = current.toLocaleDateString('en-CA');
-    renderList();
-}
-
+// 【V12 强化手势引擎】
+let tStartX = 0, tStartY = 0;
 document.addEventListener('touchstart', e => {
-    // 如果手指落在 textarea 上，则不触发翻页
-    if (e.target.tagName.toLowerCase() === 'textarea') return;
-    touchStartX = e.changedTouches[0].screenX;
-}, false);
+    if (e.target.tagName.toLowerCase() === 'textarea' || e.target.tagName.toLowerCase() === 'input') return;
+    tStartX = e.changedTouches[0].clientX;
+    tStartY = e.changedTouches[0].clientY;
+}, {passive: true});
 
 document.addEventListener('touchend', e => {
-    if (e.target.tagName.toLowerCase() === 'textarea') return;
-    touchEndX = e.changedTouches[0].screenX;
-    handleSwipe();
-}, false);
-
-function handleSwipe() {
-    const swipeDistance = touchEndX - touchStartX;
-    if (Math.abs(swipeDistance) > 100) { // 设定 100 像素为阈值
-        if (swipeDistance > 0) {
-            changeDay(-1); // 向右滑：前一天
-        } else {
-            changeDay(1);  // 向左滑：后一天
-        }
+    if (e.target.tagName.toLowerCase() === 'textarea' || e.target.tagName.toLowerCase() === 'input') return;
+    const tEndX = e.changedTouches[0].clientX;
+    const tEndY = e.changedTouches[0].clientY;
+    
+    const dx = tEndX - tStartX;
+    const dy = tEndY - tStartY;
+    
+    // 只有当水平位移大于 80px 且明显超过垂直位移时才触发
+    if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy)) {
+        let curDate = new Date(picker.value);
+        curDate.setDate(curDate.getDate() + (dx > 0 ? -1 : 1));
+        picker.value = curDate.toLocaleDateString('en-CA');
+        renderList();
     }
-}
+}, {passive: true});
 
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { window.lastMin = -1; tick(); } });
-
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
-}
-
 setInterval(tick, 1000);
 tick();
+
+// PWA 更新通知
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+        reg.addEventListener('updatefound', () => {
+            const nw = reg.installing;
+            nw.addEventListener('statechange', () => {
+                if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                    if(confirm("检测到新版本 V12，是否刷新启用滑动功能？")) location.reload();
+                }
+            });
+        });
+    });
+}
 </script>
 </body>
 </html>
